@@ -1,0 +1,761 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>지구의 자전과 낮과 밤</title>
+  <style>
+    :root{
+      --card:#ffffff;
+      --text:#1f2d3d;
+      --sub:#51606f;
+      --blue:#2f80ed;
+      --sun:#ffd166;
+      --shadow:0 12px 28px rgba(27,39,53,.12);
+    }
+
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      font-family:"Pretendard","Apple SD Gothic Neo","Noto Sans KR",sans-serif;
+      background:linear-gradient(180deg,#f8fbff 0%, #eef5fb 100%);
+      color:var(--text);
+    }
+
+    header{
+      text-align:center;
+      padding:28px 16px 16px;
+    }
+    header h1{
+      margin:0 0 10px;
+      font-size:clamp(28px,4vw,42px);
+      letter-spacing:-.04em;
+      color:#14324d;
+    }
+    header p{
+      margin:0 auto;
+      max-width:960px;
+      line-height:1.7;
+      color:#425466;
+      font-size:16px;
+    }
+
+    .wrap{
+      max-width:1200px;
+      margin:0 auto;
+      padding:18px;
+    }
+
+    .grid{
+      display:grid;
+      grid-template-columns:1.12fr .88fr;
+      gap:18px;
+      align-items:start;
+    }
+
+    @media (max-width:960px){
+      .grid{grid-template-columns:1fr}
+    }
+
+    .card{
+      background:var(--card);
+      border:1px solid #e6eef6;
+      border-radius:24px;
+      box-shadow:var(--shadow);
+      padding:18px;
+    }
+
+    h2{
+      margin:0 0 12px;
+      font-size:22px;
+      letter-spacing:-.03em;
+      color:#12314c;
+    }
+
+    .tabs,.control{
+      display:flex;
+      flex-wrap:wrap;
+      gap:10px;
+      margin-bottom:14px;
+    }
+
+    button{
+      appearance:none;
+      border:1px solid #ccd8e6;
+      background:#fff;
+      padding:10px 14px;
+      border-radius:14px;
+      cursor:pointer;
+      font-weight:700;
+      color:#24415c;
+      transition:.15s;
+    }
+    button:hover{transform:translateY(-1px)}
+    button.active{
+      background:#e8f2ff;
+      border-color:#89b9ff;
+      color:#0e56b5;
+    }
+    button.play{
+      background:var(--blue);
+      border-color:var(--blue);
+      color:white;
+    }
+
+    .slider-row{
+      display:grid;
+      grid-template-columns:auto 1fr auto;
+      gap:12px;
+      align-items:center;
+      margin:10px 0 14px;
+    }
+    input[type="range"]{
+      width:100%;
+      accent-color:var(--blue);
+    }
+    .time-pill{
+      min-width:84px;
+      text-align:center;
+      padding:8px 10px;
+      border-radius:999px;
+      border:1px solid #cfe1ff;
+      background:#f0f6ff;
+      color:#0e56b5;
+      font-weight:800;
+    }
+
+    .stage{
+      min-height:560px;
+      border-radius:22px;
+      overflow:hidden;
+      border:1px solid #dbe6f2;
+      position:relative;
+      background:#f8fbff;
+    }
+
+    .scene-title{
+      position:absolute;
+      top:14px;
+      left:14px;
+      z-index:5;
+      background:rgba(255,255,255,.92);
+      border:1px solid #deebf7;
+      border-radius:16px;
+      padding:10px 12px;
+      font-weight:800;
+      color:#21405a;
+      backdrop-filter:blur(4px);
+      max-width:92%;
+      line-height:1.5;
+    }
+
+    .hide{display:none;}
+
+    /* 1쪽: 관찰자 입장 */
+    .sky-stage{
+      position:relative;
+      min-height:560px;
+      background:linear-gradient(180deg, #bfe0ff 0%, #e9f6ff 64%, #f4e3b6 65%, #ccb085 100%);
+    }
+    .sky-stage.night{
+      background:linear-gradient(180deg, #101827 0%, #203a63 68%, #4b5d6c 69%, #2e3740 100%);
+    }
+    .sky-horizon{
+      position:absolute;
+      left:0; right:0;
+      top:66%;
+      height:3px;
+      background:rgba(70,85,100,.42);
+    }
+    .sun-sky{
+      position:absolute;
+      width:58px;
+      height:58px;
+      border-radius:50%;
+      background:var(--sun);
+      box-shadow:0 0 42px rgba(255,209,102,.8);
+      transform:translate(-50%,-50%);
+      transition:left .12s linear, top .12s linear, opacity .12s linear;
+    }
+    .star{
+      position:absolute;
+      width:4px; height:4px;
+      border-radius:50%;
+      background:rgba(255,255,255,.88);
+      opacity:0;
+    }
+    .sky-stage.night .star{opacity:1;}
+    .ground-person{
+      position:absolute;
+      left:50%;
+      bottom:17%;
+      transform:translateX(-50%);
+      text-align:center;
+      font-weight:800;
+      color:#1f2937;
+      z-index:4;
+    }
+    .sky-stage.night .ground-person{color:#f9fafb;}
+    .person-icon{
+      position:relative;
+      width:42px;
+      height:80px;
+      margin:0 auto 4px;
+    }
+    .person-icon::before{
+      content:"";
+      position:absolute;
+      top:0;
+      left:11px;
+      width:20px;
+      height:20px;
+      border-radius:50%;
+      background:#f2b59f;
+      border:2px solid rgba(0,0,0,.08);
+    }
+    .person-icon::after{
+      content:"";
+      position:absolute;
+      top:22px;
+      left:8px;
+      width:26px;
+      height:48px;
+      border-radius:12px 12px 8px 8px;
+      background:#89c9ff;
+      border:2px solid rgba(0,0,0,.08);
+    }
+    .dir-label{
+      position:absolute;
+      bottom:12px;
+      transform:translateX(-50%);
+      padding:6px 10px;
+      border-radius:999px;
+      background:rgba(255,255,255,.78);
+      border:1px solid rgba(255,255,255,.85);
+      font-weight:900;
+      color:#223548;
+      z-index:4;
+    }
+    .sky-stage.night .dir-label{
+      background:rgba(20,28,40,.6);
+      border-color:rgba(255,255,255,.14);
+      color:#f8fafc;
+    }
+    .east{left:12%}
+    .south{left:50%}
+    .west{left:88%}
+    .sky-note{
+      position:absolute;
+      left:14px;
+      top:64px;
+      max-width:360px;
+      z-index:4;
+      background:rgba(255,255,255,.88);
+      border:1px solid rgba(255,255,255,.88);
+      border-radius:18px;
+      padding:12px;
+      font-size:14px;
+      line-height:1.6;
+      color:#27435f;
+    }
+
+    /* 2쪽: 우주에서 보기 */
+    .space-stage{
+      background:
+        radial-gradient(circle at 50% 9%, rgba(255,209,102,.16) 0 8%, transparent 9%),
+        linear-gradient(180deg,#eef5ff 0%, #f8fbff 100%);
+    }
+
+    svg{width:100%;height:100%;display:block}
+
+    .legend{
+      display:flex;
+      flex-wrap:wrap;
+      gap:8px;
+      margin-top:10px;
+      color:#51606f;
+      font-size:14px;
+    }
+    .legend span{
+      display:inline-flex;
+      align-items:center;
+      gap:7px;
+      padding:6px 10px;
+      border-radius:999px;
+      background:#f8fbff;
+      border:1px solid #e3edf7;
+    }
+    .dot{
+      width:12px;height:12px;border-radius:50%;display:inline-block;
+    }
+
+    .summary p{
+      line-height:1.75;
+      color:#445569;
+      margin:0;
+      font-size:15.5px;
+    }
+    .status-box{
+      margin:12px 0;
+      background:#f8fbff;
+      border:1px solid #dde9f7;
+      border-radius:18px;
+      padding:14px;
+    }
+    .status-box strong{
+      display:block;
+      margin-bottom:6px;
+      color:#14324d;
+      font-size:18px;
+    }
+    .steps{display:grid;gap:10px;margin-top:12px;}
+    .step{
+      display:grid;
+      grid-template-columns:30px 1fr;
+      gap:10px;
+      align-items:start;
+      padding:12px;
+      border-radius:16px;
+      border:1px solid #e7eef6;
+      background:#fbfdff;
+    }
+    .num{
+      width:30px;height:30px;border-radius:50%;
+      background:#e8f2ff;color:#0e56b5;
+      display:grid;place-items:center;
+      font-weight:900;
+    }
+    .tip{
+      margin-top:14px;
+      padding:14px;
+      border-radius:18px;
+      background:#fffbe9;
+      border:1px solid #f4e09b;
+      color:#6a5200;
+      line-height:1.65;
+    }
+    footer{
+      text-align:center;
+      color:#657383;
+      padding:28px 12px 36px;
+      font-size:14px;
+      line-height:1.7;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>지구의 자전과 낮과 밤</h1>
+    <p>
+      먼저 <b>관찰자 입장</b>에서 태양이 동쪽에서 떠서 서쪽으로 지는 것처럼 보이는 현상을 살펴보고,
+      다음으로 <b>우주에서 보기</b>를 통해 실제로는 지구가 <b>서쪽에서 동쪽으로 자전</b>하면서
+      낮과 밤이 생긴다는 것을 확인합니다.
+    </p>
+  </header>
+
+  <main class="wrap">
+    <section class="grid">
+      <div class="card">
+        <h2>1. 관찰하기</h2>
+
+        <div class="tabs">
+          <button id="observerTab" class="active" onclick="setMode('observer')">관찰자 입장에서 보기</button>
+          <button id="spaceTab" onclick="setMode('space')">우주에서 보기</button>
+        </div>
+
+        <div class="control">
+          <button class="play" id="playBtn" onclick="togglePlay()">▶ 재생</button>
+          <button onclick="resetTime()">처음으로</button>
+        </div>
+
+        <div class="slider-row">
+          <span>시간</span>
+          <input id="timeSlider" type="range" min="0" max="24" step="0.1" value="6" oninput="setTime(this.value)">
+          <span class="time-pill" id="timeLabel">06:00</span>
+        </div>
+
+        <!-- 1쪽: 관찰자 입장 -->
+        <div class="stage sky-stage" id="observerStage">
+          <div class="scene-title">관찰자 입장: 태양이 동쪽에서 떠서 서쪽으로 지는 것처럼 보입니다.</div>
+          <div class="sky-note" id="skyNote">
+            시간에 따라 태양이 <b>동쪽 → 남쪽 하늘 → 서쪽</b>으로 움직이는 것처럼 보이는지 관찰해 보세요.
+          </div>
+
+          <div class="star" style="left:10%; top:12%"></div>
+          <div class="star" style="left:17%; top:20%"></div>
+          <div class="star" style="left:26%; top:14%"></div>
+          <div class="star" style="left:38%; top:18%"></div>
+          <div class="star" style="left:56%; top:10%"></div>
+          <div class="star" style="left:69%; top:19%"></div>
+          <div class="star" style="left:82%; top:13%"></div>
+          <div class="star" style="left:88%; top:24%"></div>
+
+          <div class="sun-sky" id="sunSky"></div>
+          <div class="sky-horizon"></div>
+
+          <div class="ground-person">
+            <div class="person-icon"></div>
+            관찰자
+          </div>
+
+          <div class="dir-label east">동쪽</div>
+          <div class="dir-label south">남쪽 하늘</div>
+          <div class="dir-label west">서쪽</div>
+        </div>
+
+        <!-- 2쪽: 우주에서 보기 -->
+        <div class="stage space-stage hide" id="spaceStage">
+          <div class="scene-title">우주에서 보기: 태양은 지구와 충분히 떨어져 있고, 지구를 기준으로 왼쪽은 동쪽, 오른쪽은 서쪽입니다.</div>
+
+          <svg viewBox="0 0 800 560" aria-label="우주에서 보는 태양과 지구의 자전">
+            <defs>
+              <radialGradient id="oceanGrad" cx="42%" cy="34%" r="72%">
+                <stop offset="0%" stop-color="#7ed6ff"/>
+                <stop offset="45%" stop-color="#2b96dc"/>
+                <stop offset="80%" stop-color="#176ca8"/>
+                <stop offset="100%" stop-color="#0e4f86"/>
+              </radialGradient>
+
+              <linearGradient id="landGrad" x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0%" stop-color="#8bcb73"/>
+                <stop offset="65%" stop-color="#5ea44b"/>
+                <stop offset="100%" stop-color="#8e7244"/>
+              </linearGradient>
+
+              <clipPath id="earthClip">
+                <circle cx="400" cy="330" r="145"></circle>
+              </clipPath>
+
+              <filter id="shadow" x="-30%" y="-30%" width="160%" height="160%">
+                <feDropShadow dx="0" dy="12" stdDeviation="12" flood-color="#1f2937" flood-opacity=".25"/>
+              </filter>
+
+              <filter id="glow" x="-30%" y="-30%" width="160%" height="160%">
+                <feDropShadow dx="0" dy="0" stdDeviation="10" flood-color="#9ed7ff" flood-opacity=".55"/>
+              </filter>
+            </defs>
+
+            <!-- 태양 -->
+            <g>
+              <circle cx="400" cy="52" r="40" fill="#ffd166" stroke="#f59e0b" stroke-width="4"></circle>
+              <text x="400" y="59" text-anchor="middle" font-size="20" font-weight="900" fill="#7c4700">태양</text>
+
+              <g stroke="#f59e0b" stroke-width="5" stroke-linecap="round">
+                <line x1="400" y1="0" x2="400" y2="-20"/>
+                <line x1="400" y1="106" x2="400" y2="130"/>
+                <line x1="344" y1="52" x2="320" y2="52"/>
+                <line x1="456" y1="52" x2="480" y2="52"/>
+                <line x1="360" y1="12" x2="343" y2="-5"/>
+                <line x1="440" y1="92" x2="457" y2="109"/>
+                <line x1="440" y1="12" x2="457" y2="-5"/>
+                <line x1="360" y1="92" x2="343" y2="109"/>
+              </g>
+            </g>
+
+            <!-- 햇빛 -->
+            <g stroke="#fbbf24" stroke-width="3" opacity=".55">
+              <line x1="338" y1="104" x2="338" y2="180"/>
+              <line x1="369" y1="104" x2="369" y2="176"/>
+              <line x1="400" y1="104" x2="400" y2="172"/>
+              <line x1="431" y1="104" x2="431" y2="176"/>
+              <line x1="462" y1="104" x2="462" y2="180"/>
+            </g>
+
+            <!-- 지구 -->
+            <g filter="url(#shadow)">
+              <circle cx="400" cy="330" r="152" fill="rgba(129,197,255,.18)" filter="url(#glow)"></circle>
+              <circle cx="400" cy="330" r="145" fill="url(#oceanGrad)" stroke="#245d92" stroke-width="4"></circle>
+
+              <g clip-path="url(#earthClip)">
+                <!-- 지구 표면: 서쪽에서 동쪽으로 보이도록 회전 -->
+                <g id="surfaceGroup">
+                  <g opacity=".13" stroke="#ffffff" stroke-width="1.6" fill="none">
+                    <ellipse cx="400" cy="330" rx="110" ry="145"></ellipse>
+                    <ellipse cx="400" cy="330" rx="75" ry="145"></ellipse>
+                    <ellipse cx="400" cy="330" rx="38" ry="145"></ellipse>
+                    <ellipse cx="400" cy="330" rx="145" ry="38"></ellipse>
+                    <ellipse cx="400" cy="330" rx="145" ry="78"></ellipse>
+                  </g>
+
+                  <g fill="url(#landGrad)" opacity=".96">
+                    <path d="M326 238c24-25 71-31 101-10 18 12 20 28 40 33 18 5 38 12 46 30 8 18 4 43-10 57-14 14-34 17-52 12-19-5-31-18-47-20-18-2-32 9-49 8-18-1-34-10-42-24-9-17-7-39 8-50 10-8 16-12 17-25 2-14-2-18 7-29 5-7 13-9 21-12z"/>
+                    <path d="M286 258c16-12 42-10 55 5 10 11 9 27 19 36 10 9 26 10 31 28 6 19-4 37-22 42-17 5-30-4-42-15-9-8-25-12-31-24-8-15 0-30 11-40 10-9-3-20 8-32 4-4 8-6 13-8z"/>
+                    <path d="M338 362c13-9 33-9 44 0 10 8 7 21 6 34-1 12 5 22 10 31 8 15 0 34-17 40-15 5-31-2-37-17-5-12 3-23 1-36-3-16-18-36-7-49z"/>
+                    <path d="M492 382c15-7 35-6 45 6 9 11 4 27-9 35-13 8-34 8-46-3-12-10-6-28 10-38z"/>
+                    <path d="M395 206c11-7 24-6 31 4 7 10 3 22-7 28-10 6-24 5-31-5-7-10-3-20 7-27z"/>
+                  </g>
+
+                  <g fill="#ffffff" opacity=".48">
+                    <ellipse cx="330" cy="280" rx="38" ry="12"></ellipse>
+                    <ellipse cx="350" cy="272" rx="20" ry="8"></ellipse>
+                    <ellipse cx="455" cy="265" rx="42" ry="13"></ellipse>
+                    <ellipse cx="473" cy="259" rx="18" ry="7"></ellipse>
+                    <ellipse cx="425" cy="380" rx="35" ry="11"></ellipse>
+                    <ellipse cx="275" cy="364" rx="30" ry="10"></ellipse>
+                    <ellipse cx="515" cy="335" rx="24" ry="8"></ellipse>
+                  </g>
+                </g>
+
+                <!-- 낮 -->
+                <path d="M255 330 A145 145 0 0 1 545 330 L545 185 L255 185 Z"
+                      fill="rgba(255,255,255,.32)"></path>
+                <path d="M275 330 A125 125 0 0 1 525 330 L525 215 L275 215 Z"
+                      fill="rgba(255,225,120,.18)"></path>
+
+                <!-- 밤 -->
+                <path d="M255 330 A145 145 0 0 0 545 330 L545 475 L255 475 Z"
+                      fill="rgba(5,14,28,.68)"></path>
+                <path d="M275 345 A125 115 0 0 0 525 345 L525 460 L275 460 Z"
+                      fill="rgba(14,35,74,.24)"></path>
+
+                <!-- 낮/밤 경계 -->
+                <line x1="255" y1="330" x2="545" y2="330"
+                      stroke="rgba(255,255,255,.55)" stroke-width="2" stroke-dasharray="6 5"></line>
+
+                <!-- 관찰자 점 -->
+                <circle id="observerDot" cx="545" cy="330" r="8" fill="#ef4444" stroke="#ffffff" stroke-width="3"></circle>
+              </g>
+
+              <circle cx="400" cy="330" r="145" fill="none" stroke="rgba(255,255,255,.35)" stroke-width="3"></circle>
+            </g>
+
+            <!-- 동/서: 지구 기준 좌우 -->
+            <text x="190" y="336" text-anchor="middle" font-size="20" font-weight="900" fill="#0f172a">동쪽</text>
+            <text x="610" y="336" text-anchor="middle" font-size="20" font-weight="900" fill="#0f172a">서쪽</text>
+
+            <!-- 낮/밤 표시 -->
+            <text x="400" y="275" text-anchor="middle" font-size="22" font-weight="900" fill="#16324a">낮</text>
+            <text x="400" y="415" text-anchor="middle" font-size="22" font-weight="900" fill="#ffffff">밤</text>
+
+            <text x="400" y="535" text-anchor="middle" font-size="15" fill="#475569">
+              지구를 기준으로 왼쪽은 동쪽, 오른쪽은 서쪽입니다.
+            </text>
+          </svg>
+        </div>
+
+        <div class="legend">
+          <span><i class="dot" style="background:#ffd166"></i> 태양</span>
+          <span><i class="dot" style="background:#1f8ad4"></i> 지구</span>
+          <span><i class="dot" style="background:#ef4444"></i> 관찰자 위치</span>
+          <span><i class="dot" style="background:#1f2937"></i> 밤</span>
+        </div>
+      </div>
+
+      <div class="card summary">
+        <h2>2. 관찰 결과 정리</h2>
+
+        <div class="status-box">
+          <strong id="statusTitle">현재: 해가 뜨는 무렵</strong>
+          <p id="statusText">관찰자가 있는 곳이 밤에서 낮으로 들어가며, 태양이 동쪽에서 떠오르는 것처럼 보입니다.</p>
+        </div>
+
+        <div class="steps">
+          <div class="step">
+            <div class="num">1</div>
+            <div><b>겉으로 보이는 모습</b><br>태양은 하루 동안 <b>동쪽에서 떠서 서쪽으로 지는 것처럼</b> 보입니다.</div>
+          </div>
+          <div class="step">
+            <div class="num">2</div>
+            <div><b>실제 원인</b><br>실제로는 태양이 움직이는 것이 아니라, <b>지구가 서쪽에서 동쪽으로 자전</b>하기 때문에 그렇게 보입니다.</div>
+          </div>
+          <div class="step">
+            <div class="num">3</div>
+            <div><b>낮과 밤</b><br>태양빛을 받는 밝은 쪽은 <b>낮</b>, 태양빛을 받지 못하는 어두운 쪽은 <b>밤</b>입니다.</div>
+          </div>
+        </div>
+
+        <div class="tip">
+          <b>수업에서 강조할 점</b><br>
+          우주에서 보기에서는 지구를 기준으로 <b>오른쪽이 서쪽, 왼쪽이 동쪽</b>입니다.
+          빨간 점이 <b>서쪽에서 동쪽으로</b> 이동하는 모습을 보며 지구의 자전 방향을 이해할 수 있습니다.
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    이 앱은 초등 과학 ‘낮과 밤이 생기는 까닭’을 이해하기 위한 단순화된 시뮬레이션입니다.<br>
+    계절과 공전은 제외하고, 자전과 낮·밤의 관계에 집중했습니다.
+  </footer>
+
+  <script>
+    let time = 6;
+    let playing = false;
+    let mode = 'observer';
+    let timer = null;
+
+    const timeSlider = document.getElementById('timeSlider');
+    const timeLabel = document.getElementById('timeLabel');
+    const playBtn = document.getElementById('playBtn');
+    const observerStage = document.getElementById('observerStage');
+    const spaceStage = document.getElementById('spaceStage');
+    const observerTab = document.getElementById('observerTab');
+    const spaceTab = document.getElementById('spaceTab');
+    const sunSky = document.getElementById('sunSky');
+    const skyNote = document.getElementById('skyNote');
+    const statusTitle = document.getElementById('statusTitle');
+    const statusText = document.getElementById('statusText');
+    const surfaceGroup = document.getElementById('surfaceGroup');
+    const observerDot = document.getElementById('observerDot');
+
+    function pad(n){ return String(n).padStart(2,'0'); }
+
+    function formatTime(t){
+      const hour = Math.floor(t) % 24;
+      let min = Math.round((t - Math.floor(t)) * 60);
+      let h = hour;
+      if(min === 60){
+        min = 0;
+        h = (hour + 1) % 24;
+      }
+      return `${pad(h)}:${pad(min)}`;
+    }
+
+    function setMode(next){
+      mode = next;
+      observerTab.classList.toggle('active', next === 'observer');
+      spaceTab.classList.toggle('active', next === 'space');
+      observerStage.classList.toggle('hide', next !== 'observer');
+      spaceStage.classList.toggle('hide', next !== 'space');
+      update();
+    }
+
+    function setTime(value){
+      time = Number(value);
+      if(time >= 24) time = 0;
+      update();
+    }
+
+    function resetTime(){
+      stopPlay();
+      time = 6;
+      timeSlider.value = time;
+      update();
+    }
+
+    function togglePlay(){
+      playing ? stopPlay() : startPlay();
+    }
+
+    function startPlay(){
+      playing = true;
+      playBtn.textContent = '⏸ 멈춤';
+      timer = setInterval(() => {
+        time += 0.1;
+        if(time >= 24) time = 0;
+        timeSlider.value = time;
+        update();
+      }, 90);
+    }
+
+    function stopPlay(){
+      playing = false;
+      playBtn.textContent = '▶ 재생';
+      if(timer) clearInterval(timer);
+      timer = null;
+    }
+
+    function updateObserverSky(){
+      let x, y, visible;
+
+      if(time >= 6 && time <= 18){
+        const p = (time - 6) / 12;
+        x = 12 + p * 76;
+        y = 67 - Math.sin(p * Math.PI) * 49;
+        visible = true;
+      }else{
+        visible = false;
+        const p = time < 6 ? (time + 6) / 12 : (time - 18) / 12;
+        x = 88 - p * 76;
+        y = 86 + Math.sin(p * Math.PI) * 14;
+      }
+
+      sunSky.style.left = x + '%';
+      sunSky.style.top = y + '%';
+      sunSky.style.opacity = visible ? 1 : 0.18;
+      observerStage.classList.toggle('night', !visible);
+
+      if(visible){
+        skyNote.innerHTML = '관찰자 기준으로 태양은 <b>동쪽 → 남쪽 하늘 → 서쪽</b>으로 움직이는 것처럼 보입니다.';
+      }else{
+        skyNote.innerHTML = '지금은 관찰자가 있는 곳이 태양빛을 받지 못하는 쪽에 있어서 <b>밤</b>입니다.';
+      }
+    }
+
+    function updateSpace(){
+      /*
+        화면 기준:
+        - 지구의 왼쪽 = 동쪽
+        - 지구의 오른쪽 = 서쪽
+
+        지구가 서쪽에서 동쪽으로 자전할 때,
+        빨간 점은 화면에서
+        오른쪽(서쪽) → 위쪽(낮) → 왼쪽(동쪽) → 아래쪽(밤)
+        순서로 이동합니다.
+      */
+      const cx = 400;
+      const cy = 330;
+      const r = 145;
+
+      const angle = 0 - ((time - 6) / 24) * 2 * Math.PI;
+      const x = cx + r * Math.cos(angle);
+      const y = cy + r * Math.sin(angle);
+
+      observerDot.setAttribute('cx', x.toFixed(1));
+      observerDot.setAttribute('cy', y.toFixed(1));
+
+      const deg = -((time - 6) * 15);
+      surfaceGroup.setAttribute('transform', `rotate(${deg} 400 330)`);
+    }
+
+    function getPhaseInfo(){
+      if(time >= 5.5 && time < 7.5){
+        return [
+          '현재: 해가 뜨는 무렵',
+          '관찰자 기준에서는 태양이 동쪽에서 떠오르는 것처럼 보입니다.'
+        ];
+      }
+      if(time >= 7.5 && time < 11.5){
+        return [
+          '현재: 오전',
+          '관찰자가 있는 곳은 태양빛을 받고 있으므로 낮입니다. 태양은 동쪽에서 남쪽 하늘 쪽으로 이동하는 것처럼 보입니다.'
+        ];
+      }
+      if(time >= 11.5 && time < 13.5){
+        return [
+          '현재: 한낮',
+          '관찰자가 있는 곳이 태양빛을 가장 잘 받는 때입니다. 우주에서 보면 빨간 점이 밝은 쪽 위쪽에 있습니다.'
+        ];
+      }
+      if(time >= 13.5 && time < 17.8){
+        return [
+          '현재: 오후',
+          '관찰자 기준에서는 태양이 서쪽으로 이동하는 것처럼 보입니다.'
+        ];
+      }
+      if(time >= 17.8 && time < 19.5){
+        return [
+          '현재: 해가 지는 무렵',
+          '관찰자 기준에서는 태양이 서쪽으로 지는 것처럼 보입니다.'
+        ];
+      }
+      return [
+        '현재: 밤',
+        '관찰자가 있는 곳이 태양빛을 받지 못하므로 밤입니다.'
+      ];
+    }
+
+    function update(){
+      timeLabel.textContent = formatTime(time);
+      updateObserverSky();
+      updateSpace();
+
+      const [title, text] = getPhaseInfo();
+      statusTitle.textContent = title;
+      statusText.innerHTML = text + '<br><br><b>핵심:</b> 태양이 움직이는 것처럼 보이지만, 실제로는 지구가 <b>서쪽에서 동쪽으로 자전</b>하기 때문에 낮과 밤이 생깁니다.';
+    }
+
+    update();
+  </script>
+</body>
+</html>
